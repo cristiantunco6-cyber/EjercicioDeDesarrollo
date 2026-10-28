@@ -88,6 +88,21 @@ class ProductViewModel(
         }
     }
 
+    fun eliminar(id: Int) {
+        viewModelScope.launch {
+            try {
+                val respuesta = repositorio.eliminar(id)
+                uiState = uiState.copy(productos = uiState.productos.filter { it.id != id })
+                mensaje = if (respuesta.isSuccessful)
+                    "DELETE /products/$id → ${respuesta.code()} · isDeleted = ${respuesta.body()?.isDeleted}"
+                else
+                    "DELETE /products/$id → ${respuesta.code()} · el API no guarda productos nuevos, se eliminó en la app"
+            } catch (e: Exception) {
+                mensaje = "Error al eliminar: ${e.message}"
+            }
+        }
+    }
+
     fun mensajeMostrado() {
         mensaje = null
     }

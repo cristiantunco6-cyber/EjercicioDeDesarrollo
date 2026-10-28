@@ -66,6 +66,28 @@ class ProductViewModel(
         }
     }
 
+    fun actualizar(id: Int, producto: ProductRequest) {
+        viewModelScope.launch {
+            try {
+                val anterior = buscar(id) ?: return@launch
+                val respuesta = repositorio.actualizar(id, producto)
+                val editado = anterior.copy(
+                    title = producto.title,
+                    description = producto.description,
+                    price = producto.price,
+                    category = producto.category
+                )
+                uiState = uiState.copy(productos = uiState.productos.map { if (it.id == id) editado else it })
+                mensaje = if (respuesta.isSuccessful)
+                    "PUT /products/$id → ${respuesta.code()} · actualizado"
+                else
+                    "PUT /products/$id → ${respuesta.code()} · el API no guarda productos nuevos, se actualizó en la app"
+            } catch (e: Exception) {
+                mensaje = "Error al actualizar: ${e.message}"
+            }
+        }
+    }
+
     fun mensajeMostrado() {
         mensaje = null
     }

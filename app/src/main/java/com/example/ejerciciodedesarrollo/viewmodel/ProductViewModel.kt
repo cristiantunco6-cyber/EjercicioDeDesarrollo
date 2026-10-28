@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ejerciciodedesarrollo.data.ProductModel
 import com.example.ejerciciodedesarrollo.data.ProductRepository
+import com.example.ejerciciodedesarrollo.data.ProductRequest
 import kotlinx.coroutines.launch
 
 data class ProductUiState(
@@ -44,6 +45,26 @@ class ProductViewModel(
     }
 
     fun buscar(id: Int): ProductModel? = uiState.productos.find { it.id == id }
+
+    fun crear(producto: ProductRequest) {
+        viewModelScope.launch {
+            try {
+                val respuesta = repositorio.crear(producto)
+                val creado = respuesta.body()
+                if (respuesta.isSuccessful && creado != null) {
+                    // DummyJSON siempre responde con el id 195, si ya existe se usa el siguiente libre
+                    val idLocal = if (uiState.productos.any { it.id == creado.id })
+                        uiState.productos.maxOf { it.id } + 1 else creado.id
+                    uiState = uiState.copy(productos = listOf(creado.copy(id = idLocal)) + uiState.productos)
+                    mensaje = "POST /products/add → ${respuesta.code()} · creado con id ${creado.id}"
+                } else {
+                    mensaje = "POST /products/add → ${respuesta.code()}"
+                }
+            } catch (e: Exception) {
+                mensaje = "Error al crear: ${e.message}"
+            }
+        }
+    }
 
     fun mensajeMostrado() {
         mensaje = null
